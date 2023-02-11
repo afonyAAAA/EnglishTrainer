@@ -10,6 +10,12 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavController
+import androidx.navigation.NavHost
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import ru.fi.englishtrainer.navigation.NavRoutes
+import ru.fi.englishtrainer.navigation.TrainerNavHost
 import ru.fi.englishtrainer.ui.theme.EnglishTrainerTheme
 
 class MainActivity : ComponentActivity() {
@@ -17,25 +23,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             EnglishTrainerTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background) {
-                    Greeting("Android")
-                }
+                TrainerNavHost(navController = rememberNavController())
             }
         }
     }
 }
 
-@Composable
-fun Greeting(name: String) {
-    Text(text = "Hello $name!")
-}
 
-@Preview(showBackground = true)
-@Composable
-fun DefaultPreview() {
-    EnglishTrainerTheme {
-        Greeting("Android")
-    }
-}

@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "741436236552",
+    "project_id": "englishtrainer-a36a1",
+    "storage_bucket": "englishtrainer-a36a1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:741436236552:android:00adcafeee4a6d6e8a42bd",
+        "android_client_info": {
+          "package_name": "ru.fi.englishtrainer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "741436236552-h8586jrfhsamh62bcegf16k9qed2hqa0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMnglEJnDmANeDtf9sgfdURfsAZGyMHHU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "741436236552-h8586jrfhsamh62bcegf16k9qed2hqa0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
