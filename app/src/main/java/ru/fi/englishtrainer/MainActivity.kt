@@ -17,12 +17,14 @@ import androidx.navigation.compose.rememberNavController
 import ru.fi.englishtrainer.navigation.NavRoutes
 import ru.fi.englishtrainer.navigation.TrainerNavHost
 import ru.fi.englishtrainer.ui.theme.EnglishTrainerTheme
+import ru.fi.englishtrainer.utils.Constants.context
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             EnglishTrainerTheme {
+                context = applicationContext
                 TrainerNavHost(navController = rememberNavController())
             }
         }
