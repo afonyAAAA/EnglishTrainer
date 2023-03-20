@@ -5,4 +5,4 @@ data class EnglishWord(
     var translatedWord: String = "",
     var answered : Boolean = false,
     var correctly : Boolean = false
-    )
+)

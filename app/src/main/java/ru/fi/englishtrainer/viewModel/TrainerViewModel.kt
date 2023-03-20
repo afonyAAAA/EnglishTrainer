@@ -1,38 +1,55 @@
 package ru.fi.englishtrainer.viewModel
 
 import android.app.Application
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import ru.fi.englishtrainer.database.room.AppRoomDatabase
+import ru.fi.englishtrainer.database.room.repository.RoomRepository
 import ru.fi.englishtrainer.utils.Constants
 import ru.fi.englishtrainer.models.EnglishWord
+import ru.fi.englishtrainer.models.History
+import java.time.LocalDate
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class TrainerViewModel(application : Application): AndroidViewModel(application) {
 
+    val context = application
+
     lateinit var targetWord : String
     lateinit var targetTranslate : String
     lateinit var selectedTranslate : String
     lateinit var shuffledListTranslate : MutableList<EnglishWord>
-    lateinit var notCorrect: MutableState<Boolean>
     lateinit var openEndDialog : MutableState<Boolean>
     lateinit var targetColor : MutableState<Color>
-    var startGame : MutableState<Boolean> = mutableStateOf(false)
-    var resultTrainer : MutableState<Float> = mutableStateOf(0.0f)
+    var startTrainer : MutableState<Boolean> = mutableStateOf(false)
+    var resultTrainer : MutableState<Int> = mutableStateOf(0)
     var englishWords : MutableState<MutableList<EnglishWord>> = mutableStateOf(mutableListOf())
     var shuffledListEnglish : MutableList<EnglishWord> = mutableListOf()
     var targetIndex : Int = 0
 
+    var selectedDate: MutableState<LocalDate> = mutableStateOf(LocalDate.now())
+
     suspend fun getCollectionEnglishWord(): List<EnglishWord> {
-        return Constants.REPOSITORY.getEnglishWord()
+        return Constants.FIREBASE_REPOSITORY.getEnglishWord()
+    }
+
+    fun initRoomDatabase(){
+        val dao = AppRoomDatabase.getInstance(context = context).getRoomDao()
+        Constants.ROOM_REPOSITORY = RoomRepository(dao)
     }
 
     fun addword(){
-        Constants.REPOSITORY.addEnglishWord()
+        Constants.FIREBASE_REPOSITORY.addEnglishWord()
     }
 
     fun wrongAnswer(list: MutableList<EnglishWord>): MutableList<EnglishWord>{
@@ -67,18 +84,14 @@ class TrainerViewModel(application : Application): AndroidViewModel(application)
     }
 
     fun resumeTrainer(){
-
+        startTrainer.value = false
         targetIndex = 0
-
-        englishWords.value.clear()
+        englishWords = mutableStateOf(mutableListOf())
         shuffledListTranslate.clear()
         shuffledListEnglish.clear()
-
-        englishWords = mutableStateOf(mutableListOf())
-
     }
 
-    suspend fun checkResult(list: MutableList<EnglishWord>) : Float{
+    suspend fun checkResult(list: MutableList<EnglishWord>) : Int{
         var count = 0
         var countCorrectAnswer = 0f
         return suspendCoroutine{ continuation ->
@@ -86,12 +99,38 @@ class TrainerViewModel(application : Application): AndroidViewModel(application)
                 if(it.correctly)
                     ++countCorrectAnswer
                 if(count == list.size - 1)
-                    continuation.resume((countCorrectAnswer / list.size.toFloat()) * 100.0f)
+                    continuation.resume(((countCorrectAnswer / list.size.toFloat()) * 100.0f).toInt())
 
                 ++count
             }
         }
     }
+
+    fun isEditTagItemFullyVisible(lazyListState: LazyListState, editTagItemIndex: Int): Boolean {
+        with(lazyListState.layoutInfo) {
+            val editingTagItemVisibleInfo = visibleItemsInfo.find { it.index == editTagItemIndex }
+            return if (editingTagItemVisibleInfo == null) {
+                false
+            } else {
+                viewportEndOffset - editingTagItemVisibleInfo.offset >= editingTagItemVisibleInfo.size
+            }
+        }
+    }
+
+    fun addHistory(history: History){
+        viewModelScope.launch(Dispatchers.Main) {
+            Constants.ROOM_REPOSITORY.create(history){}
+        }
+    }
+
+    fun deleteAllHistory(history: List<History>){
+        viewModelScope.launch(Dispatchers.Main){
+            Constants.ROOM_REPOSITORY.delete(history){}
+        }
+    }
+
+    fun readAllHistory() = Constants.ROOM_REPOSITORY.readAllHistory
+
 
 
 }

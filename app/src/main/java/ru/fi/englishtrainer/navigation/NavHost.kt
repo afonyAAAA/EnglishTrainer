@@ -4,8 +4,10 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import ru.fi.englishtrainer.screens.HistoryScreen
 import ru.fi.englishtrainer.screens.StartScreen
 import ru.fi.englishtrainer.screens.TrainerScreen
+import ru.fi.englishtrainer.viewModel.TrainerViewModel
 
 
 sealed class NavRoutes(val route: String){
@@ -19,13 +21,17 @@ sealed class NavRoutes(val route: String){
 
 
 @Composable
-fun TrainerNavHost(navController: NavHostController){
+fun TrainerNavHost(navController: NavHostController, viewModel: TrainerViewModel){
     NavHost(navController = navController, startDestination = NavRoutes.Start.route){
         composable(NavRoutes.Start.route){
-            StartScreen(navHostController = navController)
+            StartScreen(navHostController = navController, viewModel)
         }
         composable(NavRoutes.Trainer.route){
-           TrainerScreen(navHostController = navController)
+           TrainerScreen(navHostController = navController, viewModel)
         }
+        composable(NavRoutes.History.route){
+            HistoryScreen(navHostController = navController, viewModel)
+        }
+
     }
 }

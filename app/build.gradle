@@ -2,8 +2,8 @@ plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
     id 'com.google.gms.google-services'
-    id 'kotlin-parcelize'
-
+    //id 'kotlin-parcelize'
+    id 'kotlin-kapt'
 }
 
 android {
@@ -16,6 +16,8 @@ android {
         targetSdk 32
         versionCode 1
         versionName "1.0"
+
+        multiDexEnabled = true
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -30,6 +32,9 @@ android {
         }
     }
     compileOptions {
+
+        coreLibraryDesugaringEnabled = true
+
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
@@ -50,6 +55,22 @@ android {
 }
 
 dependencies {
+
+    //Dialogs date picker
+    implementation "io.github.vanpra.compose-material-dialogs:datetime:0.8.1-rc"
+
+    //Gson 
+    implementation 'com.google.code.gson:gson:2.8.8'
+
+    //Room dependencies
+    def room_version = "2.4.2"
+
+    implementation "androidx.room:room-runtime:$room_version"
+    kapt "androidx.room:room-compiler:$room_version"
+    implementation "androidx.room:room-ktx:$room_version"
+
+    //observeAsState()
+    implementation "androidx.compose.runtime:runtime-livedata:1.2.0-rc01"
 
     //Firebase dependencies
     implementation platform('com.google.firebase:firebase-bom:31.2.0')
@@ -73,6 +94,9 @@ dependencies {
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:$compose_ui_version"
     debugImplementation "androidx.compose.ui:ui-tooling:$compose_ui_version"
     debugImplementation "androidx.compose.ui:ui-test-manifest:$compose_ui_version"
+
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.2.2")
+
 
 
 }

@@ -1,31 +1,29 @@
 package ru.fi.englishtrainer
 
+import android.app.Application
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.navigation.NavController
-import androidx.navigation.NavHost
-import androidx.navigation.NavHostController
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
-import ru.fi.englishtrainer.navigation.NavRoutes
 import ru.fi.englishtrainer.navigation.TrainerNavHost
 import ru.fi.englishtrainer.ui.theme.EnglishTrainerTheme
-import ru.fi.englishtrainer.utils.Constants.context
+import ru.fi.englishtrainer.viewModel.TrainerViewModel
+import ru.fi.englishtrainer.viewModel.TrainerViewModelFactory
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
+            val context = LocalContext.current
+            val viewModel : TrainerViewModel =
+                viewModel(factory = TrainerViewModelFactory(context.applicationContext as Application))
+
+            viewModel.initRoomDatabase()
+
             EnglishTrainerTheme {
-                context = applicationContext
-                TrainerNavHost(navController = rememberNavController())
+                TrainerNavHost(navController = rememberNavController(), viewModel)
             }
         }
     }

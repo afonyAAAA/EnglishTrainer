@@ -3,4 +3,5 @@
     <string name="start">Начать</string>
     <string name="history">История</string>
     <string name="rating">Рейтинг</string>
+    <string name="DeleteHistory">Удалить историю</string>
 </resources>

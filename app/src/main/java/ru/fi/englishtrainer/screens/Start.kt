@@ -15,14 +15,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import ru.fi.englishtrainer.R
 import ru.fi.englishtrainer.navigation.NavRoutes
+import ru.fi.englishtrainer.viewModel.TrainerViewModel
 
 
 @Composable
-fun StartScreen(navHostController: NavHostController){
+fun StartScreen(navHostController: NavHostController, viewModel: TrainerViewModel){
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceAround){
         TitleApp()
         ButtonStart(navHostController)
-        ButtonHistory()
+        ButtonHistory(navHostController)
     }
 }
 
@@ -42,8 +43,10 @@ fun ButtonStart(navHostController: NavHostController){
 }
 
 @Composable
-fun ButtonHistory(){
-    Button(onClick = { /*TODO*/ }) {
+fun ButtonHistory(navHostController: NavHostController){
+    Button(onClick = {
+        navHostController.navigate(NavRoutes.History.route)
+    }) {
         Text(text = stringResource(R.string.history))
     }
 }

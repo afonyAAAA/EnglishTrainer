@@ -1,7 +1,6 @@
 package ru.fi.englishtrainer.screens
 
 import android.annotation.SuppressLint
-import android.app.Application
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
@@ -14,67 +13,68 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.launch
 import ru.fi.englishtrainer.models.EnglishWord
+import ru.fi.englishtrainer.models.History
 import ru.fi.englishtrainer.navigation.NavRoutes
-import ru.fi.englishtrainer.utils.Constants
 import ru.fi.englishtrainer.viewModel.TrainerViewModel
-import ru.fi.englishtrainer.viewModel.TrainerViewModelFactory
+import java.time.LocalDateTime
 
 
 @SuppressLint("MutableCollectionMutableState", "CoroutineCreationDuringComposition")
 @Composable
-fun TrainerScreen(navHostController: NavHostController){
+fun TrainerScreen(navHostController: NavHostController, viewModel: TrainerViewModel){
 
-    val context = LocalContext.current
-    val tViewModel: TrainerViewModel =
-        viewModel(factory = TrainerViewModelFactory(context.applicationContext as Application))
+    var lazyListState: LazyListState = rememberLazyListState()
 
-    tViewModel.openEndDialog = remember { mutableStateOf(false) }
-    tViewModel.shuffledListTranslate = remember { mutableStateListOf() }
-    tViewModel.notCorrect = remember { mutableStateOf(false) }
-    tViewModel.targetColor = remember{ mutableStateOf(Color.White) }
+    viewModel.openEndDialog = remember { mutableStateOf(false) }
+    viewModel.shuffledListTranslate = remember { mutableStateListOf() }
+    viewModel.targetColor = remember{ mutableStateOf(Color.White) }
 
     //Initial lists for trainer (english words and translate words)
-    LaunchedEffect(tViewModel.englishWords){
-        tViewModel.englishWords.value = tViewModel.getCollectionEnglishWord().toMutableList()
+    LaunchedEffect(viewModel.englishWords){
+        viewModel.englishWords.value = viewModel.getCollectionEnglishWord().toMutableList()
 
         //Shuffle lists
-        tViewModel.shuffledListEnglish.addAll(tViewModel.shuffleList(tViewModel.englishWords))
-        tViewModel.shuffledListTranslate.addAll(tViewModel.shuffleList(tViewModel.englishWords))
+        viewModel.shuffledListEnglish.addAll(viewModel.shuffleList(viewModel.englishWords))
+        viewModel.shuffledListTranslate.addAll(viewModel.shuffleList(viewModel.englishWords))
 
-        //tViewModel.addword()
-
-        tViewModel.startGame.value = true
+        viewModel.startTrainer.value = true
+        lazyListState.scrollToItem(0)
     }
 
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-        if(tViewModel.startGame.value){
+        if(viewModel.startTrainer.value){
 
-            tViewModel.targetWordChange(tViewModel.shuffledListEnglish)
+            viewModel.targetWordChange(viewModel.shuffledListEnglish)
 
-            ListEnglish(listEnglish = tViewModel.shuffledListEnglish, tViewModel)
+            ListEnglish(listEnglish = viewModel.shuffledListEnglish, viewModel, lazyListState)
 
-            ListTranslate(listTranslate = tViewModel.shuffledListTranslate, tViewModel)
+            ListTranslate(listTranslate = viewModel.shuffledListTranslate, viewModel, lazyListState)
 
-            if(tViewModel.openEndDialog.value) {
+            if(viewModel.openEndDialog.value) {
 
                 var resultIsNotNull by remember { mutableStateOf(false) }
 
-                LaunchedEffect(tViewModel.resultTrainer) {
-                    tViewModel.resultTrainer.value = tViewModel.checkResult(tViewModel.shuffledListEnglish)
+                LaunchedEffect(viewModel.resultTrainer) {
+                    viewModel.resultTrainer.value = viewModel.checkResult(viewModel.shuffledListEnglish)
                     resultIsNotNull = true
                 }
 
                 if (resultIsNotNull) {
                     EndDialogWindow(
-                        tViewModel.openEndDialog,
+                        viewModel.openEndDialog,
                         navHostController,
-                        tViewModel
+                        viewModel
                     )
+
+                    viewModel.addHistory(
+                        history = History(
+                            date = LocalDateTime.now(),
+                            percentCorrect = viewModel.resultTrainer.value,
+                            listResult = viewModel.shuffledListEnglish))
                 }
 
             }
@@ -91,55 +91,32 @@ fun TrainerScreen(navHostController: NavHostController){
 }
 
 @Composable
-fun ListEnglish(listEnglish: MutableList<EnglishWord>, viewModel: TrainerViewModel){
-
-
-//    lateinit var targetIndex : MutableState<Int>
-//
-//    val lazyListState: LazyListState = rememberLazyListState()
-
+fun ListEnglish(listEnglish: MutableList<EnglishWord>, viewModel: TrainerViewModel, lazyListState: LazyListState){
     LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight(0.5f),
-        contentPadding = PaddingValues(8.dp)
-       // state = lazyListState
+        contentPadding = PaddingValues(8.dp),
+        state = lazyListState
     ){
         itemsIndexed(items = listEnglish){ index,item ->
-//            if(item.englishWord == viewModel.targetWord){
-//               targetIndex = remember { mutableStateOf(index) }
-//            }
             ListItem(item, viewModel)
         }
     }
-
-//    fun isEditTagItemFullyVisible(lazyListState: LazyListState, editTagItemIndex: Int): Boolean {
-//        with(lazyListState.layoutInfo) {
-//            val editingTagItemVisibleInfo = visibleItemsInfo.find { it.index == editTagItemIndex }
-//            return if (editingTagItemVisibleInfo == null) {
-//                false
-//            } else {
-//                viewportEndOffset - editingTagItemVisibleInfo.offset >= editingTagItemVisibleInfo.size
-//            }
-//        }
-//    }
-//
-//    LaunchedEffect(targetIndex.value){
-//        if (!isEditTagItemFullyVisible(lazyListState, targetIndex.value)) {
-//            lazyListState.scrollToItem(targetIndex.value)
-//        }
-//    }
-
 }
 
 @Composable
 fun ListItem(item: EnglishWord, viewModel : TrainerViewModel){
 
-    if(item.englishWord == viewModel.targetWord){
+
+    if(item.englishWord == viewModel.targetWord)
         viewModel.targetColor.value = Color.Yellow
-    }else if(item.englishWord != viewModel.targetWord){
+    else if(item.englishWord != viewModel.targetWord && item.correctly)
+        viewModel.targetColor.value = Color.Green
+    else if(item.englishWord != viewModel.targetWord && !item.correctly && item.answered)
+        viewModel.targetColor.value = Color.Red
+    else
         viewModel.targetColor.value = Color.White
-    }
 
     val color = if(item.answered && item.correctly)
         Color.Green
@@ -191,7 +168,9 @@ fun ListItemTranslate(item: EnglishWord, onItemClick:() -> Unit){
 
 @SuppressLint("SuspiciousIndentation")
 @Composable
-fun ListTranslate(listTranslate: MutableList<EnglishWord>, viewModel: TrainerViewModel){
+fun ListTranslate(listTranslate: MutableList<EnglishWord>, viewModel: TrainerViewModel, lazyListState: LazyListState){
+
+    val scope = rememberCoroutineScope()
 
     LazyColumn(
         modifier = Modifier
@@ -204,28 +183,35 @@ fun ListTranslate(listTranslate: MutableList<EnglishWord>, viewModel: TrainerVie
                 onItemClick = {
                     viewModel.selectedTranslate = item.translatedWord
 
-                        if(viewModel.selectedTranslate == viewModel.targetTranslate){
+                    if(viewModel.selectedTranslate == viewModel.targetTranslate){
 
-                            viewModel.shuffledListEnglish = viewModel.correctAnswer(viewModel.shuffledListEnglish)
+                        viewModel.shuffledListEnglish = viewModel.correctAnswer(viewModel.shuffledListEnglish)
 
-                            listTranslate.remove(item)
+                        listTranslate.remove(item)
 
+                    }else{
+                        Toast.makeText(
+                            viewModel.context,
+                            "Ответ не верный, правильный перевод: ${viewModel.targetTranslate}",
+                            Toast.LENGTH_SHORT).show()
 
-                        }else{
-                            Toast.makeText(Constants.context, "Ответ не верный, правильный перевод: ${viewModel.targetTranslate}", Toast.LENGTH_SHORT)
-                                .show()
+                        viewModel.shuffledListEnglish = viewModel.wrongAnswer(viewModel.shuffledListEnglish)
 
-                            viewModel.shuffledListEnglish = viewModel.wrongAnswer(viewModel.shuffledListEnglish)
+                        viewModel.deleteItemWrong(listTranslate)
+                    }
 
-                            viewModel.deleteItemWrong(listTranslate)
+                    scope.launch {
+                        if(viewModel.isEditTagItemFullyVisible(lazyListState, viewModel.targetIndex)){
+                            lazyListState.scrollToItem(viewModel.targetIndex)
                         }
+                    }
 
-                        if(viewModel.shuffledListEnglish.size - 1 == viewModel.targetIndex){
-                            viewModel.openEndDialog.value = true
-                        }else{
-                            ++viewModel.targetIndex
-                            viewModel.targetWordChange(viewModel.shuffledListEnglish)
-                        }
+                    if(viewModel.shuffledListEnglish.size - 1 == viewModel.targetIndex){
+                        viewModel.openEndDialog.value = true
+                    }else{
+                        ++viewModel.targetIndex
+                        viewModel.targetWordChange(viewModel.shuffledListEnglish)
+                    }
 
                 })
         }
@@ -243,35 +229,29 @@ fun EndDialogWindow(
             openDialog.value = false
         },
         title = { Text(text = "Конец")},
-        text = { Text(text = "Игра окончена. Вы ответили правильно на ${viewModel.resultTrainer.value.toInt()}%.")},
+        text = { Text(text = "Игра окончена. Вы ответили правильно на ${viewModel.resultTrainer.value}%.")},
         buttons = {
-            Column(Modifier.fillMaxWidth(),horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(horizontalArrangement = Arrangement.SpaceBetween){
-
-                    Button(
-                        onClick = {
-                            openDialog.value = false
-                            viewModel.startGame.value = false
-                            viewModel.resumeTrainer()
-                        }
-                    ) {
-                        Text(text = "Продолжить")
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceAround){
+                Button(
+                    onClick = {
+                        openDialog.value = false
+                        viewModel.resumeTrainer()
                     }
-
-
-
-                    Button(
-                        onClick = {
-                            openDialog.value = false
-                            navHostController.navigate(NavRoutes.Start.route)
-                        }
-                    ) {
-                        Text(text = "Закончить")
-                    }
-
+                ) {
+                    Text(text = "Продолжить")
                 }
-            }
 
+                Button(
+                    onClick = {
+                        openDialog.value = false
+                        viewModel.resumeTrainer()
+                        navHostController.navigate(NavRoutes.Start.route)
+                    }
+                ) {
+                    Text(text = "Закончить")
+                }
+
+            }
         }
     )
 }
