@@ -19,6 +19,4 @@ class RoomRepository(private val trainerRoomDao: TrainerRoomDao) : DatabaseRoomR
         trainerRoomDao.deleteAllHistory(history)
         onSuccess()
     }
-
-
 }

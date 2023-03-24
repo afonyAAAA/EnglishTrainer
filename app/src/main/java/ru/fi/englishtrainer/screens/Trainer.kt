@@ -29,17 +29,15 @@ fun TrainerScreen(navHostController: NavHostController, viewModel: TrainerViewMo
 
     var lazyListState: LazyListState = rememberLazyListState()
 
-    viewModel.openEndDialog = remember { mutableStateOf(false) }
-    viewModel.shuffledListTranslate = remember { mutableStateListOf() }
-    viewModel.targetColor = remember{ mutableStateOf(Color.White) }
-
     //Initial lists for trainer (english words and translate words)
     LaunchedEffect(viewModel.englishWords){
         viewModel.englishWords.value = viewModel.getCollectionEnglishWord().toMutableList()
 
         //Shuffle lists
-        viewModel.shuffledListEnglish.addAll(viewModel.shuffleList(viewModel.englishWords))
-        viewModel.shuffledListTranslate.addAll(viewModel.shuffleList(viewModel.englishWords))
+        if(viewModel.shuffledListEnglish.isEmpty() && viewModel.shuffledListTranslate.isEmpty()){
+            viewModel.shuffledListEnglish.addAll(viewModel.shuffleList(viewModel.englishWords))
+            viewModel.shuffledListTranslate.addAll(viewModel.shuffleList(viewModel.englishWords))
+        }
 
         viewModel.startTrainer.value = true
         lazyListState.scrollToItem(0)
@@ -76,7 +74,6 @@ fun TrainerScreen(navHostController: NavHostController, viewModel: TrainerViewMo
                             percentCorrect = viewModel.resultTrainer.value,
                             listResult = viewModel.shuffledListEnglish))
                 }
-
             }
 
         }else{
@@ -202,7 +199,7 @@ fun ListTranslate(listTranslate: MutableList<EnglishWord>, viewModel: TrainerVie
 
                     scope.launch {
                         if(viewModel.isEditTagItemFullyVisible(lazyListState, viewModel.targetIndex)){
-                            lazyListState.scrollToItem(viewModel.targetIndex)
+                            lazyListState.animateScrollToItem(viewModel.targetIndex)
                         }
                     }
 

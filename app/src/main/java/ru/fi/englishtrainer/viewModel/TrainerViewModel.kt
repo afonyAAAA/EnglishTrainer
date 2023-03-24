@@ -5,8 +5,10 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -24,32 +26,27 @@ import kotlin.coroutines.suspendCoroutine
 class TrainerViewModel(application : Application): AndroidViewModel(application) {
 
     val context = application
-
     lateinit var targetWord : String
     lateinit var targetTranslate : String
     lateinit var selectedTranslate : String
-    lateinit var shuffledListTranslate : MutableList<EnglishWord>
-    lateinit var openEndDialog : MutableState<Boolean>
-    lateinit var targetColor : MutableState<Color>
+    var openEndDialog : MutableState<Boolean> = mutableStateOf(false)
+    var targetColor : MutableState<Color> = mutableStateOf(Color.White)
     var startTrainer : MutableState<Boolean> = mutableStateOf(false)
     var resultTrainer : MutableState<Int> = mutableStateOf(0)
     var englishWords : MutableState<MutableList<EnglishWord>> = mutableStateOf(mutableListOf())
-    var shuffledListEnglish : MutableList<EnglishWord> = mutableListOf()
+    var shuffledListTranslate : MutableList<EnglishWord> = mutableStateListOf()
+    var shuffledListEnglish : MutableList<EnglishWord> = mutableStateListOf()
     var targetIndex : Int = 0
-
-    var selectedDate: MutableState<LocalDate> = mutableStateOf(LocalDate.now())
+    var selectedDate : MutableState<LocalDate>? = null
+    val dateSelected : MutableState<Boolean> = mutableStateOf(false)
 
     suspend fun getCollectionEnglishWord(): List<EnglishWord> {
-        return Constants.FIREBASE_REPOSITORY.getEnglishWord()
+        return Constants.FIREBASE_REPOSITORY!!.getEnglishWord()
     }
 
     fun initRoomDatabase(){
         val dao = AppRoomDatabase.getInstance(context = context).getRoomDao()
         Constants.ROOM_REPOSITORY = RoomRepository(dao)
-    }
-
-    fun addword(){
-        Constants.FIREBASE_REPOSITORY.addEnglishWord()
     }
 
     fun wrongAnswer(list: MutableList<EnglishWord>): MutableList<EnglishWord>{
@@ -117,6 +114,34 @@ class TrainerViewModel(application : Application): AndroidViewModel(application)
         }
     }
 
+    fun filterListHistory(valuePercent: String, selectedDate: LocalDate?, noFilteredList: MutableList<History>): List<History>{
+        val filteredHistory : MutableList<History> = if(valuePercent.isEmpty() && selectedDate == null){
+            noFilteredList
+        }else{
+            var resultList = mutableListOf<History>()
+
+            noFilteredList.forEach { item ->
+                if (valuePercent.isNotEmpty() && selectedDate == null) {
+                    if (item.percentCorrect >= valuePercent.toInt()){
+                        resultList.add(item)
+                    }
+                }else if(valuePercent.isEmpty() && selectedDate.toString() != null){
+                    if (selectedDate == LocalDate.of(item.date.year, item.date.month, item.date.dayOfMonth)){
+                        resultList.add(item)
+                    }
+                }
+                else if(valuePercent.isNotEmpty() && selectedDate.toString() != null ){
+                    if (item.percentCorrect >= valuePercent.toInt() && selectedDate == LocalDate.
+                        of(item.date.year, item.date.month, item.date.dayOfMonth)){
+                        resultList.add(item)
+                    }
+                }
+            }
+            resultList
+        }
+        return filteredHistory
+    }
+
     fun addHistory(history: History){
         viewModelScope.launch(Dispatchers.Main) {
             Constants.ROOM_REPOSITORY.create(history){}
@@ -130,8 +155,6 @@ class TrainerViewModel(application : Application): AndroidViewModel(application)
     }
 
     fun readAllHistory() = Constants.ROOM_REPOSITORY.readAllHistory
-
-
 
 }
 

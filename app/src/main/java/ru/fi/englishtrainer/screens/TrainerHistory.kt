@@ -2,54 +2,43 @@ package ru.fi.englishtrainer.screens
 
 import android.annotation.SuppressLint
 import android.graphics.Typeface
-import android.widget.Space
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
-import androidx.compose.ui.graphics.drawscope.DrawStyle
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.modifier.modifierLocalConsumer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.date.datepicker
-import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import com.vanpra.composematerialdialogs.rememberMaterialDialogState
-import org.checkerframework.checker.units.qual.Time
 import ru.fi.englishtrainer.R
 import ru.fi.englishtrainer.models.EnglishWord
 import ru.fi.englishtrainer.models.History
+import ru.fi.englishtrainer.navigation.NavRoutes
 import ru.fi.englishtrainer.ui.theme.Shapes
 import ru.fi.englishtrainer.viewModel.TrainerViewModel
-import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
@@ -68,6 +57,7 @@ fun HistoryScreen(navHostController: NavHostController, viewModel: TrainerViewMo
     if(!openListResult.value)
         history?.let { historyList ->
             if (history.isEmpty()){
+                ButtonBack(navHostController, NavRoutes.Start)
                 Column(modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally)
@@ -77,13 +67,14 @@ fun HistoryScreen(navHostController: NavHostController, viewModel: TrainerViewMo
             }else{
                 Column{
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        TextFieldChoosePercent(valuePercent = valuePercent)
-                        SelectedDateAndTime(viewModel)
+                        ButtonBack(navHostController, NavRoutes.Start)
+                        if(viewModel.dateSelected.value) SelectedDate(viewModel)
                     }
                     Row(modifier = Modifier.fillMaxWidth()){
-                        DialogDateTimePicker(viewModel)
+                        TextFieldChoosePercent(valuePercent)
+                        DialogDateTimePicker(viewModel, viewModel.dateSelected)
                     }
-                    ListHistory(listHistory = historyList, openListResult, valuePercent.value, viewModel)
+                    ListHistory(listHistory = historyList.sortedByDescending { it.date }.toMutableList(), openListResult, valuePercent.value, viewModel)
                 }
                 Column(modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.Bottom,
@@ -91,28 +82,57 @@ fun HistoryScreen(navHostController: NavHostController, viewModel: TrainerViewMo
                 {
                     ButtonDeleteHistory(viewModel = viewModel, listHistory = history)
                 }
-
             }
         }
     else{
         history?.let {
-            itemResult?.let { itemHistory -> ListResult(listResult = itemHistory.listResult) }
+            itemResult?.let { itemHistory ->
+                Column {
+                    IconButton(onClick = {openListResult.value = false}) {
+                        Icon(Icons.Filled.ArrowBack, null)
+                    }
+                    ListResult(listResult = itemHistory.listResult)
+                }
+            }
         }
     }
 }
 
 @Composable
-fun SelectedDateAndTime(viewModel: TrainerViewModel){
-    val formattedDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(viewModel.selectedDate.value)
-    Text(formattedDate, modifier = Modifier.padding(10.dp))
+fun deleteFilterDate(viewModel: TrainerViewModel, dateSelected: MutableState<Boolean>){
+    IconButton(onClick = {
+        viewModel.selectedDate = null
+        dateSelected.value = false
+    }, modifier = Modifier.padding(end = 10.dp)) {
+        Icon(Icons.Filled.Close, contentDescription = "")
+    }
+}
+
+
+@Composable
+fun SelectedDate(viewModel: TrainerViewModel){
+    val formattedDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(viewModel.selectedDate!!.value)
+    Row{
+        Text(formattedDate,
+            color = Color.White,
+            modifier = Modifier.padding(top = 13.dp, end = 10.dp)
+            .background(MaterialTheme.colors.primary, shape = Shapes.small)
+        )
+        deleteFilterDate(viewModel = viewModel, dateSelected = viewModel.dateSelected)
+    }
+
 }
 
 @Composable
-fun DialogDateTimePicker(viewModel : TrainerViewModel){
+fun DialogDateTimePicker(viewModel : TrainerViewModel, dateSelected : MutableState<Boolean>){
 
     val dialogStateDate = rememberMaterialDialogState()
 
-    Button(onClick = {dialogStateDate.show()}, modifier = Modifier.padding(start = 16.dp)) {Text("Выбрать дату")}
+    Button(onClick = {
+        dialogStateDate.show()
+        dateSelected.value = false
+                     },
+        modifier = Modifier.padding(start = 16.dp, top = 16.dp)) {Text("Выбрать дату")}
 
     MaterialDialog(
         dialogState = dialogStateDate,
@@ -120,19 +140,24 @@ fun DialogDateTimePicker(viewModel : TrainerViewModel){
             positiveButton(text = "ОК")
             negativeButton("Закрыть")
         }
-
     ) {
         datepicker(
             initialDate = LocalDate.now(),
             locale = Locale("ru", "RU"),
             title = "Выберите дату",
         ){
-            viewModel.selectedDate.value = it
-
+            viewModel.selectedDate = mutableStateOf(it)
+            dateSelected.value = true
         }
     }
 }
 
+@Composable
+fun ButtonBack(navHostController: NavHostController, window : NavRoutes){
+    IconButton(onClick = {navHostController.navigate(window.route)}, ) {
+        Icon(Icons.Filled.ArrowBack, contentDescription = "")
+    }
+}
 
 @Composable
 fun TextFieldChoosePercent(valuePercent:MutableState<String>){
@@ -141,7 +166,8 @@ fun TextFieldChoosePercent(valuePercent:MutableState<String>){
         modifier = Modifier
             .padding(16.dp)
             .height(50.dp)
-            .width(100.dp),
+            .width(100.dp)
+            .background(Color.White),
         value = valuePercent.value,
         singleLine = true,
         onValueChange = { if(it.length <= maxChar) valuePercent.value = it},
@@ -154,49 +180,26 @@ fun TextFieldChoosePercent(valuePercent:MutableState<String>){
 
 @Composable
 fun ListHistory(
-    listHistory: List<History>,
+    listHistory: MutableList<History>,
     openList: MutableState<Boolean>,
     valuePercent: String,
     viewModel: TrainerViewModel
-
 ) {
     LazyColumn(
         modifier = Modifier
-            .fillMaxWidth()
-            .fillMaxHeight(0.5f),
+            .fillMaxSize(),
         contentPadding = PaddingValues(8.dp)
     ) {
-        if(valuePercent.isNotEmpty()){
-            itemsIndexed(items = listHistory) { index, item ->
-                if(item.percentCorrect >= valuePercent.toInt() && viewModel.selectedDate.value == LocalDate.of(item.date.year, item.date.month, item.date.dayOfMonth)
-                ){
-                    ListItemHistory(item) {
-                        itemResult = item
-                        openList.value = true
-                    }
-                }
-            }
-        }else if(valuePercent.isEmpty()){
-            itemsIndexed(items = listHistory) { index, item ->
-                if(viewModel.selectedDate.value == LocalDate.of(item.date.year, item.date.month, item.date.dayOfMonth)
-                ){
-                    ListItemHistory(item) {
-                        itemResult = item
-                        openList.value = true
-                    }
-                }
-            }
-        }
-        else{
-            itemsIndexed(items = listHistory) { index, item ->
+            items(items = viewModel.filterListHistory(valuePercent, viewModel.selectedDate?.value, listHistory)) {item ->
                 ListItemHistory(item) {
                     itemResult = item
                     openList.value = true
                 }
             }
+
         }
     }
-}
+
 
 @Composable
 fun ListResult(listResult: List<EnglishWord>) {
@@ -208,7 +211,7 @@ fun ListResult(listResult: List<EnglishWord>) {
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(8.dp)
     ) {
-        itemsIndexed(items = listResult) { index, item ->
+        items(items = listResult) {item ->
             ListItemResult(item = item){
                 translateWord.value = item.translatedWord
                 openDialog.value = true
@@ -219,12 +222,11 @@ fun ListResult(listResult: List<EnglishWord>) {
     if(openDialog.value && translateWord.value.isNotEmpty()){
         TranslateDialogWindow(openDialog = openDialog, translateWord = translateWord.value)
     }
-
 }
 
 @SuppressLint("SimpleDateFormat")
 @Composable
-fun ListItemHistory(item: History, onItemClick:()->Unit){
+fun ListItemHistory(item: History, onItemClick:()->Unit) {
 
     val formattedDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(item.date)
     val formattedTime = DateTimeFormatter.ofPattern("HH:mm").format(item.date.plusHours(8))
@@ -249,8 +251,10 @@ fun ListItemHistory(item: History, onItemClick:()->Unit){
             }
 
             val textPaint = Paint().asFrameworkPaint().apply {
+                strokeWidth = 75f
                 isAntiAlias = true
                 textSize = 40f
+                textAlign = android.graphics.Paint.Align.CENTER
                 color = android.graphics.Color.BLACK
                 typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD_ITALIC)
             }
@@ -271,17 +275,14 @@ fun ListItemHistory(item: History, onItemClick:()->Unit){
                         useCenter = true)
                     drawIntoCanvas {
                         it.nativeCanvas.drawText("${item.percentCorrect}%",
-                            110f,
-                            67.dp.toPx(),
+                            75f,
+                            60.dp.toPx(),
                             textPaint)
-                    }
-
-                }
-
-
-            )
-        } }
+                    } })
+        }
     }
+}
+
 
 @Composable
 fun ListItemResult(item: EnglishWord, onItemClick: () -> Unit){
@@ -320,7 +321,6 @@ fun ButtonDeleteHistory(viewModel: TrainerViewModel, listHistory: List<History>)
     }
 }
 
-
 @Composable
 fun TranslateDialogWindow(openDialog : MutableState<Boolean>, translateWord: String){
     AlertDialog(
@@ -336,17 +336,6 @@ fun TranslateDialogWindow(openDialog : MutableState<Boolean>, translateWord: Str
                     Text(text = "ОК")
                 }
             }
-
         }
     )
 }
-
-@SuppressLint("UnrememberedMutableState")
-@Composable
-@Preview(showBackground = true)
-fun PrevHistory() {
-    ListItemHistory(item = History(0, LocalDateTime.of(2023, 2, 2, 4, 22, 22), 80, listOf())) {
-
-    }
-}
-
