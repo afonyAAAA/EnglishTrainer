@@ -26,27 +26,26 @@ import kotlin.coroutines.suspendCoroutine
 class TrainerViewModel(application : Application): AndroidViewModel(application) {
 
     val context = application
+    var targetIndex : Int = 0
     lateinit var targetWord : String
     lateinit var targetTranslate : String
-    lateinit var selectedTranslate : String
+    var shuffledListTranslate : MutableList<EnglishWord> = mutableStateListOf()
+    var shuffledListEnglish : MutableList<EnglishWord> = mutableStateListOf()
     var openEndDialog : MutableState<Boolean> = mutableStateOf(false)
     var targetColor : MutableState<Color> = mutableStateOf(Color.White)
     var startTrainer : MutableState<Boolean> = mutableStateOf(false)
     var resultTrainer : MutableState<Int> = mutableStateOf(0)
     var englishWords : MutableState<MutableList<EnglishWord>> = mutableStateOf(mutableListOf())
-    var shuffledListTranslate : MutableList<EnglishWord> = mutableStateListOf()
-    var shuffledListEnglish : MutableList<EnglishWord> = mutableStateListOf()
-    var targetIndex : Int = 0
     var selectedDate : MutableState<LocalDate>? = null
     val dateSelected : MutableState<Boolean> = mutableStateOf(false)
-
-    suspend fun getCollectionEnglishWord(): List<EnglishWord> {
-        return Constants.FIREBASE_REPOSITORY!!.getEnglishWord()
-    }
 
     fun initRoomDatabase(){
         val dao = AppRoomDatabase.getInstance(context = context).getRoomDao()
         Constants.ROOM_REPOSITORY = RoomRepository(dao)
+    }
+
+    suspend fun getCollectionEnglishWord(): List<EnglishWord> {
+        return Constants.FIREBASE_REPOSITORY!!.getEnglishWord()
     }
 
     fun wrongAnswer(list: MutableList<EnglishWord>): MutableList<EnglishWord>{
@@ -114,6 +113,8 @@ class TrainerViewModel(application : Application): AndroidViewModel(application)
         }
     }
 
+
+    //Interaction with history
     fun filterListHistory(valuePercent: String, selectedDate: LocalDate?, noFilteredList: MutableList<History>): List<History>{
         val filteredHistory : MutableList<History> = if(valuePercent.isEmpty() && selectedDate == null){
             noFilteredList
@@ -155,7 +156,6 @@ class TrainerViewModel(application : Application): AndroidViewModel(application)
     }
 
     fun readAllHistory() = Constants.ROOM_REPOSITORY.readAllHistory
-
 }
 
 class TrainerViewModelFactory(private val application: Application): ViewModelProvider.Factory {

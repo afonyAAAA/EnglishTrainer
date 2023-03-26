@@ -99,7 +99,7 @@ fun HistoryScreen(navHostController: NavHostController, viewModel: TrainerViewMo
 }
 
 @Composable
-fun deleteFilterDate(viewModel: TrainerViewModel, dateSelected: MutableState<Boolean>){
+fun DeleteFilterDate(viewModel: TrainerViewModel, dateSelected: MutableState<Boolean>){
     IconButton(onClick = {
         viewModel.selectedDate = null
         dateSelected.value = false
@@ -118,7 +118,7 @@ fun SelectedDate(viewModel: TrainerViewModel){
             modifier = Modifier.padding(top = 13.dp, end = 10.dp)
             .background(MaterialTheme.colors.primary, shape = Shapes.small)
         )
-        deleteFilterDate(viewModel = viewModel, dateSelected = viewModel.dateSelected)
+        DeleteFilterDate(viewModel = viewModel, dateSelected = viewModel.dateSelected)
     }
 
 }
@@ -229,7 +229,7 @@ fun ListResult(listResult: List<EnglishWord>) {
 fun ListItemHistory(item: History, onItemClick:()->Unit) {
 
     val formattedDate = DateTimeFormatter.ofPattern("dd.MM.yyyy").format(item.date)
-    val formattedTime = DateTimeFormatter.ofPattern("HH:mm").format(item.date.plusHours(8))
+    val formattedTime = DateTimeFormatter.ofPattern("HH:mm").format(item.date)
 
     Card(
         modifier = Modifier

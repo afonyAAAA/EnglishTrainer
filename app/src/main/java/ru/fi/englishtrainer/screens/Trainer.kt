@@ -22,14 +22,11 @@ import ru.fi.englishtrainer.navigation.NavRoutes
 import ru.fi.englishtrainer.viewModel.TrainerViewModel
 import java.time.LocalDateTime
 
-
-@SuppressLint("MutableCollectionMutableState", "CoroutineCreationDuringComposition")
 @Composable
 fun TrainerScreen(navHostController: NavHostController, viewModel: TrainerViewModel){
 
     var lazyListState: LazyListState = rememberLazyListState()
 
-    //Initial lists for trainer (english words and translate words)
     LaunchedEffect(viewModel.englishWords){
         viewModel.englishWords.value = viewModel.getCollectionEnglishWord().toMutableList()
 
@@ -75,7 +72,6 @@ fun TrainerScreen(navHostController: NavHostController, viewModel: TrainerViewMo
                             listResult = viewModel.shuffledListEnglish))
                 }
             }
-
         }else{
             Column(Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -178,9 +174,7 @@ fun ListTranslate(listTranslate: MutableList<EnglishWord>, viewModel: TrainerVie
         items(items = listTranslate){item ->
             ListItemTranslate(item,
                 onItemClick = {
-                    viewModel.selectedTranslate = item.translatedWord
-
-                    if(viewModel.selectedTranslate == viewModel.targetTranslate){
+                    if(item.translatedWord == viewModel.targetTranslate){
 
                         viewModel.shuffledListEnglish = viewModel.correctAnswer(viewModel.shuffledListEnglish)
 

@@ -28,7 +28,6 @@ data class History(
 
 
 class Converters {
-
     @TypeConverter
     fun toListString(value: String): List<EnglishWord> {
         val listType = object :
