@@ -12,6 +12,7 @@ import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.activity.compose.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -21,11 +22,17 @@ import ru.fi.englishtrainer.models.History
 import ru.fi.englishtrainer.navigation.NavRoutes
 import ru.fi.englishtrainer.viewModel.TrainerViewModel
 import java.time.LocalDateTime
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.Composable
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 
 @Composable
 fun TrainerScreen(navHostController: NavHostController, viewModel: TrainerViewModel){
 
-    var lazyListState: LazyListState = rememberLazyListState()
+    ListenerBackHolder(viewModel = viewModel, navHostController = navHostController)
+
+    val lazyListState: LazyListState = rememberLazyListState()
 
     LaunchedEffect(viewModel.englishWords){
         viewModel.englishWords.value = viewModel.getCollectionEnglishWord().toMutableList()
@@ -55,6 +62,11 @@ fun TrainerScreen(navHostController: NavHostController, viewModel: TrainerViewMo
 
                 LaunchedEffect(viewModel.resultTrainer) {
                     viewModel.resultTrainer.value = viewModel.checkResult(viewModel.shuffledListEnglish)
+                    viewModel.addHistory(
+                        history = History(
+                            date = LocalDateTime.now(),
+                            percentCorrect = viewModel.resultTrainer.value,
+                            listResult = viewModel.shuffledListEnglish))
                     resultIsNotNull = true
                 }
 
@@ -64,12 +76,6 @@ fun TrainerScreen(navHostController: NavHostController, viewModel: TrainerViewMo
                         navHostController,
                         viewModel
                     )
-
-                    viewModel.addHistory(
-                        history = History(
-                            date = LocalDateTime.now(),
-                            percentCorrect = viewModel.resultTrainer.value,
-                            listResult = viewModel.shuffledListEnglish))
                 }
             }
         }else{
@@ -92,7 +98,7 @@ fun ListEnglish(listEnglish: MutableList<EnglishWord>, viewModel: TrainerViewMod
         contentPadding = PaddingValues(8.dp),
         state = lazyListState
     ){
-        itemsIndexed(items = listEnglish){ index,item ->
+        items(items = listEnglish){ item ->
             ListItem(item, viewModel)
         }
     }
@@ -218,6 +224,8 @@ fun EndDialogWindow(
     AlertDialog(
         onDismissRequest = {
             openDialog.value = false
+            viewModel.resumeTrainer()
+            navHostController.navigate(NavRoutes.Start.route)
         },
         title = { Text(text = "Конец")},
         text = { Text(text = "Игра окончена. Вы ответили правильно на ${viewModel.resultTrainer.value}%.")},
@@ -246,4 +254,31 @@ fun EndDialogWindow(
         }
     )
 }
+@Composable
+fun ListenerBackHolder(viewModel: TrainerViewModel, navHostController: NavHostController){
+    val isGoingBack = remember { mutableStateOf(true) }
+
+    BackHandler(
+        enabled = isGoingBack.value,
+        onBack = {
+            if(viewModel.englishWords.value.isEmpty()){
+                isGoingBack.value = false
+            }else{
+                CoroutineScope(Dispatchers.Main).launch {
+                    viewModel.resultTrainer.value = viewModel.checkResult(viewModel.shuffledListEnglish)
+
+                    viewModel.addHistory(History(
+                        date = LocalDateTime.now(),
+                        percentCorrect = viewModel.resultTrainer.value,
+                        listResult = viewModel.shuffledListEnglish))
+
+                    navHostController.navigateUp()
+                }
+
+            }
+        }
+    )
+}
+
+
 

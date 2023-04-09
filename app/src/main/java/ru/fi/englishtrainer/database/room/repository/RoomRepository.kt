@@ -10,13 +10,11 @@ class RoomRepository(private val trainerRoomDao: TrainerRoomDao) : DatabaseRoomR
     override val readAllHistory: LiveData<List<History>>
         get() = trainerRoomDao.getAllHistory()
 
-    override suspend fun create(history: History, onSuccess: () -> Unit) {
+    override suspend fun create(history: History) {
         trainerRoomDao.addHistory(history)
-        onSuccess()
     }
 
-    override suspend fun delete(history: List<History>, onSuccess: () -> Unit) {
+    override suspend fun delete(history: List<History>) {
         trainerRoomDao.deleteAllHistory(history)
-        onSuccess()
     }
 }

@@ -143,15 +143,15 @@ class TrainerViewModel(application : Application): AndroidViewModel(application)
         return filteredHistory
     }
 
-    fun addHistory(history: History){
+    suspend fun addHistory(history: History){
         viewModelScope.launch(Dispatchers.Main) {
-            Constants.ROOM_REPOSITORY.create(history){}
+            Constants.ROOM_REPOSITORY.create(history)
         }
     }
 
     fun deleteAllHistory(history: List<History>){
         viewModelScope.launch(Dispatchers.Main){
-            Constants.ROOM_REPOSITORY.delete(history){}
+            Constants.ROOM_REPOSITORY.delete(history)
         }
     }
 

@@ -8,8 +8,8 @@ interface DatabaseRoomRepository {
 
     val readAllHistory : LiveData<List<History>>
 
-    suspend fun create(history: History, onSuccess : () -> Unit)
+    suspend fun create(history: History)
 
-    suspend fun delete(history: List<History>, onSuccess : () -> Unit)
+    suspend fun delete(history: List<History>)
 
 }

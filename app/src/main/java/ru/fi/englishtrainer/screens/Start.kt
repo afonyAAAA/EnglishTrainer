@@ -9,6 +9,7 @@ import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,7 +33,7 @@ import ru.fi.englishtrainer.viewModel.TrainerViewModel
 fun StartScreen(navHostController: NavHostController, viewModel: TrainerViewModel){
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.SpaceAround){
         TitleApp()
-        ButtonStart(navHostController)
+        ButtonStart(navHostController, viewModel)
         ButtonHistory(navHostController)
     }
     if(Constants.FIREBASE_REPOSITORY == null){
@@ -53,8 +54,9 @@ fun TitleApp(){
 }
 
 @Composable
-fun ButtonStart(navHostController: NavHostController){
+fun ButtonStart(navHostController: NavHostController, viewModel: TrainerViewModel){
     Button(onClick = {
+        viewModel.resumeTrainer()
         navHostController.navigate(route = NavRoutes.Trainer.route)
     }, enabled = Constants.FIREBASE_REPOSITORY != null,
     ) {
